@@ -679,8 +679,9 @@ pub struct WssAuth {
 /// WebSocket subscription request
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WssSubscription {
-    /// Authentication information
-    pub auth: WssAuth,
+    /// Authentication information (required for USER channel, optional for MARKET channel)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auth: Option<WssAuth>,
     /// Array of markets (condition IDs) for USER channel
     pub markets: Option<Vec<String>>,
     /// Array of asset IDs (token IDs) for MARKET channel

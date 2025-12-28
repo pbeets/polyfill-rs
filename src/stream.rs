@@ -175,6 +175,7 @@ impl WebSocketStream {
     }
 
     /// Subscribe to user channel (orders and trades)
+    /// Requires authentication via `with_auth()`.
     pub async fn subscribe_user_channel(&mut self, markets: Vec<String>) -> Result<()> {
         let auth = self
             .auth
@@ -183,7 +184,7 @@ impl WebSocketStream {
             .clone();
 
         let subscription = WssSubscription {
-            auth,
+            auth: Some(auth),
             markets: Some(markets),
             asset_ids: None,
             channel_type: "USER".to_string(),
@@ -193,15 +194,10 @@ impl WebSocketStream {
     }
 
     /// Subscribe to market channel (order book and trades)
+    /// Authentication is optional for market data.
     pub async fn subscribe_market_channel(&mut self, asset_ids: Vec<String>) -> Result<()> {
-        let auth = self
-            .auth
-            .as_ref()
-            .ok_or_else(|| PolyfillError::auth("No authentication provided for WebSocket"))?
-            .clone();
-
         let subscription = WssSubscription {
-            auth,
+            auth: self.auth.clone(),
             markets: None,
             asset_ids: Some(asset_ids),
             channel_type: "MARKET".to_string(),
