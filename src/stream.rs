@@ -194,16 +194,33 @@ impl WebSocketStream {
     }
 
     /// Subscribe to market channel (order book and trades)
-    /// Authentication is optional for market data.
+    /// Authentication is not required for market data per Polymarket docs.
     pub async fn subscribe_market_channel(&mut self, asset_ids: Vec<String>) -> Result<()> {
+        // Ensure connection
+        if self.connection.is_none() {
+            self.connect().await?;
+        }
+
+        // Send subscription message in the format expected by Polymarket
+        // Per docs: { "assets_ids": [...], "type": "market" }
+        let message = serde_json::json!({
+            "assets_ids": asset_ids,
+            "type": "market",
+        });
+
+        self.send_message(message).await?;
+
+        // Track subscription internally
         let subscription = WssSubscription {
-            auth: self.auth.clone(),
+            auth: None,
             markets: None,
             asset_ids: Some(asset_ids),
-            channel_type: "MARKET".to_string(),
+            channel_type: "market".to_string(),
         };
+        self.subscriptions.push(subscription);
 
-        self.subscribe_async(subscription).await
+        info!("Subscribed to market channel");
+        Ok(())
     }
 
     /// Unsubscribe from market data
